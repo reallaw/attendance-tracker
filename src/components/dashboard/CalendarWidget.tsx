@@ -52,13 +52,13 @@ export function CalendarWidget({
   return (
     <section className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
+        <h2 className="text-xl font-semibold flex items-center leading-none gap-2 align-middle">
           <CalendarIcon size={20} className="text-indigo-500" />
           Календарь
         </h2>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-bold text-slate-600 uppercase tracking-widest">
-            {format(currentMonth, 'LLLL yyyy', { locale: ru })}
+        <div className="flex items-center gap-1">
+          <span className="text-sm text-slate-600 uppercase tracking-widest">
+            {format(currentMonth, 'LLL', { locale: ru })}
           </span>
           <div className="flex gap-1">
             <button 
@@ -118,7 +118,7 @@ export function CalendarWidget({
                   "absolute bottom-2 flex gap-0.5 flex-wrap justify-center",
                   isSelected ? "p-0.5 rounded-full" : ""
                 )}>
-                  {(dayLessons.map((_, idx) => (
+                  {(dayLessons.slice(0, 3).map((_, idx) => (
                     <div 
                       key={idx} 
                       className={cn(

@@ -105,7 +105,7 @@ export default function App() {
       setApiMessage(null);
       
       try {
-        const userResp = await fetch(`${API_BASE_URL}/GetUser?token=${token}&v=${APP_VERSION}`);
+        const userResp = await fetch(`${API_BASE_URL}/GetUser?token=${token}&v=${APP_VERSION}&ref=web`);
         if (!userResp.ok) throw new Error(`Err while trying to fetch user data: ${userResp.status}`);
         const userData = await userResp.json();
         setUser(userData);
@@ -150,8 +150,16 @@ export default function App() {
   }, [token]);
 
   const saveToken = (newToken: string) => {
-    setToken(newToken);
-    localStorage.setItem('backend_token', newToken);
+    const cleanToken = newToken.trim();
+
+    setToken(cleanToken);
+    
+    try {
+      localStorage.setItem('backend_token', cleanToken);
+    } catch (e) {
+      console.warn("Local Storage can't be accessed!", e);
+    }
+    
     setIsSettingsOpen(false);
     setShowWelcome(true);
     setTimeout(() => setShowWelcome(false), 3000);
@@ -276,11 +284,13 @@ export default function App() {
 
     subjectsStats.sort((a, b) => b.factPercent - a.factPercent);
 
+    let mostMissedByQuantity = subjectsStats.sort((a, b) => b.missed - a.missed);
+
     const calculatedStats = {
       total: totalMissedOverall,
       sortedSubjects: subjectsStats.map(s => ({ name: s.name, count: s.missed })),
       mostMissed: subjectsStats.length > 0 
-        ? { name: subjectsStats[0].name, count: subjectsStats[0].missed } 
+        ? { name: mostMissedByQuantity[0].name, count: mostMissedByQuantity[0].missed } 
         : { name: '—', count: 0 }
     };
 
@@ -310,7 +320,7 @@ export default function App() {
       doneBtnText: 'Понятно',
       steps: [
         { 
-          element: '#tour-stats', // ID элемента
+          element: '#tour-stats',
           popover: { 
             title: 'Общая статистика', 
             description: 'Здесь отображается общее количество пропущенных уроков и самый проблемный предмет.', 
@@ -318,27 +328,19 @@ export default function App() {
           }
         },
         { 
-          element: '#tour-distribution', 
-          popover: { 
-            title: 'Лимиты и запасы', 
-            description: 'Самый важный виджет. Показывает процент прогулов и сколько уроков еще "в запасе" до красной зоны. Можно сортировать!', 
-            side: "left", align: 'start' 
-          }
-        },
-        { 
           element: '#tour-calendar', 
           popover: { 
             title: 'Календарь', 
-            description: 'Точки показывают дни, когда вы пропустили занятия. Нажмите на день, чтобы увидеть, что иименно пропущено.', 
+            description: 'Если вы пропустили день, то под датой будет точка. Чем больше пропущено, тем больше точек. Нажмите на день, чтобы увидеть детали.', 
             side: "right", align: 'start' 
           }
         },
         { 
-          element: '#tour-settings', 
+          element: '#tour-distribution', 
           popover: { 
-            title: 'Настройки', 
-            description: 'Если нужно обновить токен — вам сюда.', 
-            side: "bottom", align: 'end' 
+            title: 'Статистика пропусков', 
+            description: 'Самый важный виджет. Показывает процент пропусков и сколько уроков допустимо до красной зоны. Можно сортировать!', 
+            side: "left", align: 'start' 
           }
         }
       ]
@@ -347,14 +349,10 @@ export default function App() {
     driverObj.drive();
   };
 
-  // 3. Автоматический запуск для новых пользователей
   useEffect(() => {
-    // Проверяем, показывали ли мы уже тур
     const hasSeenTour = localStorage.getItem('has_seen_tour');
     
-    // Если токен есть (пользователь вошел) и тур еще не видел
     if (token && !hasSeenTour) {
-      // Небольшая задержка, чтобы UI успел отрисоваться
       setTimeout(() => {
         startTour();
         localStorage.setItem('has_seen_tour', 'true');
@@ -429,7 +427,7 @@ export default function App() {
         onSave={saveToken} 
       />
       <LoadingOverlay isLoading={isLoading} />
-      <WelcomeOverlay show={showWelcome} name={user?.given_name || "undefined"} />
+      <WelcomeOverlay show={user ? showWelcome : false} name={user?.given_name} />
     </div>
   );
 }

@@ -41,7 +41,7 @@ export function SettingsModal({ isOpen, currentToken, onClose, onSave }: Setting
                   API Токен
                 </label>
                 <input 
-                  type="password" 
+                  type="text" 
                   defaultValue={currentToken}
                   id="tokenInput"
                   placeholder="Введите ваш токен..."
