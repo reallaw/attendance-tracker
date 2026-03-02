@@ -4,4 +4,5 @@ export interface MissedLesson {
   subject: string;
   notes?: string;
   subject_id?: string;
+  notified?: boolean;
 }

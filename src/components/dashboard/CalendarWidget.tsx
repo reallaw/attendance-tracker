@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useId, useMemo } from 'react';
+import { Tooltip as ReactTooltip } from 'react-tooltip'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -11,6 +12,7 @@ import {
   startOfWeek,
   endOfWeek
 } from 'date-fns';
+import 'react-tooltip/dist/react-tooltip.css'
 import { ru } from 'date-fns/locale';
 import { cn } from '../../utils';
 import { MissedLesson } from '../../types';
@@ -50,6 +52,8 @@ export function CalendarWidget({
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     return lessons.filter(l => l.date === dateStr);
   }, [selectedDate, lessons]);
+
+  console.log(lessonsOnSelectedDate)
 
   return (
     <section className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
@@ -161,9 +165,16 @@ export function CalendarWidget({
             <div className="space-y-3">
               {lessonsOnSelectedDate.length > 0 ? (
                 lessonsOnSelectedDate.map(lesson => (
-                  <div key={lesson.id} className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                    <span className="font-medium text-slate-700">{lesson.subject}</span>
+                  <div key={lesson.id} className="bg-slate-50 p-4 rounded-2xl flex items-center justify-between">
+                    <div className="flex gap-2 items-center">
+                      <div className="w-2 max-w-2 h-2 max-h-2 rounded-full bg-indigo-500" />
+                      <span className="font-medium text-slate-700">{lesson.subject}</span>
+                    </div>
+                    <span className={cn(
+                      "w-6 h-6 flex items-center justify-center font-bold rounded-lg",
+                      !lesson.notified ? "bg-red-50 text-red-600" : "text-slate-700"
+                    )} data-tooltip-id={lesson.id} data-tooltip-content={!lesson.notified ? "Пропуск без уведомления" : "По заявлению родителя"}>Н</span>
+                    <ReactTooltip id={lesson.id} place="bottom" opacity="1"/>
                   </div>
                 ))
               ) : (

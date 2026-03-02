@@ -22,7 +22,8 @@ import { WelcomeOverlay } from './components/overlays/WelcomeOverlay';
 
 // Актуальная версия фронтенда для API
 const APP_VERSION = "1.21";
-const API_BASE_URL = "https://mesh-api.duckdns.org";
+const API_BASE_URL = "http://localhost:8000";
+// const API_BASE_URL = "https://mesh-api.duckdns.org";
 
 // ============================================================================
 // ХАРДКОД ДАННЫХ ИЗ GOOGLE ТАБЛИЦЫ
@@ -122,18 +123,20 @@ export default function App() {
 
         const parsedLessons: MissedLesson[] = [];
         Object.entries(data).forEach(([dateString, subjectsDict]) => {
-          const typedSubjectsDict = subjectsDict as Record<string, { name: string; id: number; q: number }>;
-          Object.values(typedSubjectsDict).forEach((subj) => {
+          // Указываем, что в объекте могут быть как предметы, так и служебное поле notified
+          const { notified, ...subjects } = subjectsDict as any; 
+
+          Object.values(subjects).forEach((subj: any) => {
             for (let i = 0; i < subj.q; i++) {
               parsedLessons.push({
                 id: `${subj.id}_${dateString}_${i}`,
                 date: dateString,
                 subject: subj.name,
-                subject_id: String(subj.id)
+                notified: notified, // используем извлеченное ранее значение
+                subject_id: String(subj.id),
               });
             }
-          });
-        });
+          })});
 
         parsedLessons.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setLessons(parsedLessons);
@@ -342,7 +345,15 @@ export default function App() {
             description: 'Самый важный виджет. Показывает процент пропусков и сколько уроков допустимо до красной зоны. Можно сортировать!', 
             side: "left", align: 'start' 
           }
-        }
+        },
+        { 
+          element: '#app-container', 
+          popover: { 
+            title: 'Вот и все', 
+            description: 'Спасибо, что пользуетесь трекером!', 
+            side: "left", align: 'start' 
+          }
+        },
       ]
     });
 
@@ -350,19 +361,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('has_seen_tour');
+    const hasSeenTour = localStorage.getItem('has_seen_tour_v1');
     
     if (token && !hasSeenTour) {
       setTimeout(() => {
         startTour();
-        localStorage.setItem('has_seen_tour', 'true');
+        localStorage.setItem('has_seen_tour_v1', 'true');
       }, 500); 
     }
   }, [token]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100">
-      <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+      <div className="max-w-5xl mx-auto px-4 py-8 md:py-12" id="app-container">
         
         <div id="tour-settings">
           <Header onOpenSettings={() => setIsSettingsOpen(true)} />

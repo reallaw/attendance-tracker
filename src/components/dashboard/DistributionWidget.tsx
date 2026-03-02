@@ -23,7 +23,7 @@ export const DistributionWidget = ({ data }: { data: DistributionData[] }) => {
         return a.safeRemaining - b.safeRemaining; // По возрастанию запаса (самые опасные сверху)
       }
     })
-    .slice(0, 5);
+    .slice(0, 7);
 
   return (
     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
