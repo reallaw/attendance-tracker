@@ -37,6 +37,8 @@ export function CalendarWidget({
   onSelectDate
 }: CalendarWidgetProps) {
 
+  const windowWidth = window.innerWidth;
+
   const calendarDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
     const end = endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 1 });
@@ -82,7 +84,7 @@ export function CalendarWidget({
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1 md:gap-2 mb-2">
         {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => (
-          <div key={day} className="text-center text-[10px] font-bold text-slate-400 uppercase py-2">
+          <div key={day} className="text-center text-xs font-bold text-slate-400 uppercase py-2">
             {day}
           </div>
         ))}
@@ -100,16 +102,16 @@ export function CalendarWidget({
               onClick={() => onSelectDate(day)}
               disabled={!isCurrentMonth}
               className={cn(
-                "aspect-square rounded-xl md:rounded-2xl flex flex-col items-center justify-center relative transition-all",
+                "aspect-square rounded-xl md:rounded-2xl flex flex-col items-center justify-center relative transition-all text-slate-700",
                 !isCurrentMonth && "opacity-0 pointer-events-none",
                 isCurrentMonth && "hover:bg-slate-50",
-                isSelected && "bg-indigo-600 text-white hover:bg-indigo-700",
-                !isSelected && isCurrentMonth && "bg-white"
+                windowWidth < 468 && (dayLessons.length > 0 && dayLessons.length <=3 ? "border-yellow-500 border" : dayLessons.length > 3 ? "border-red-500 border" : ""),
+                isSelected && "bg-indigo-600 hover:bg-indigo-700 text-white border-0",
+                !isSelected && isCurrentMonth && "bg-white",
               )}
             >
               <span className={cn(
-                "text-xs font-semibold",
-                isSelected ? "text-white" : "text-slate-700"
+                "text-base font-semibold",
               )}>
                 {format(day, 'd')}
               </span>
@@ -118,7 +120,8 @@ export function CalendarWidget({
                   "absolute bottom-2 flex gap-0.5 flex-wrap justify-center",
                   isSelected ? "p-0.5 rounded-full" : ""
                 )}>
-                  {(dayLessons.slice(0, 3).map((_, idx) => (
+                  {windowWidth > 468 ?
+                  (dayLessons.slice(0, 3).map((_, idx) => (
                     <div 
                       key={idx} 
                       className={cn(
@@ -126,7 +129,8 @@ export function CalendarWidget({
                         isSelected ? "bg-white" : "bg-indigo-500"
                       )} 
                     />
-                  )))}
+                  )))
+                  : ""}
                 </div>
               )}
             </button>

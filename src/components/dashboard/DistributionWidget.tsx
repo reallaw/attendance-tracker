@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChartBar } from 'lucide-react';
 
 // Добавьте типизацию, если используете TypeScript
 interface DistributionData {
@@ -27,7 +28,7 @@ export const DistributionWidget = ({ data }: { data: DistributionData[] }) => {
   return (
     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h3 className="text-lg font-bold text-slate-800">Статистика пропусков</h3>
+        <h3 className="text-xl font-semibold flex items-center leading-none gap-2 align-middle"><ChartBar size={20} className="text-indigo-500" />Статистика пропусков</h3>
         
         {/* Переключатель сортировки */}
         {sortedData.length > 0 ? (<div className="flex bg-slate-100 p-1 rounded-xl">

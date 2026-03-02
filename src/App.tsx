@@ -80,7 +80,7 @@ export default function App() {
   const [lessons, setLessons] = useState<MissedLesson[]>([]);
   const [token, setToken] = useState<string>('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 0, 1)); // Январь 2026
+  const [currentMonth, setCurrentMonth] = useState(Date.now()); // Январь 2026
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
