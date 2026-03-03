@@ -11,7 +11,7 @@ interface TopMissedProps {
 
 export function TopMissed({ subjects }: TopMissedProps) {
   return (
-    <section className="bg-slate-900 text-white p-6 md:p-8 rounded-[2rem] shadow-xl shadow-slate-200">
+    <section className="bg-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-xl shadow-slate-200">
       <h2 className="text-lg md:text-xl font-semibold mb-6">Топ пропусков</h2>
       <div className="space-y-5">
         {subjects.slice(0, 3).map((s, i) => (

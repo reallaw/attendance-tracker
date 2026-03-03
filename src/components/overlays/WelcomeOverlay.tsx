@@ -22,7 +22,7 @@ export function WelcomeOverlay({ show, name }: WelcomeOverlayProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 1.05, y: -10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative bg-white w-full max-w-md rounded-[2.5rem] p-12 shadow-2xl text-center overflow-hidden"
+            className="relative bg-white w-full max-w-md rounded-3xl p-12 shadow-2xl text-center overflow-hidden"
           >
             <motion.div 
               initial={{ scale: 0 }}

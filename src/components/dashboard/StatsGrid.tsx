@@ -13,7 +13,7 @@ export function StatsGrid({ total, mostMissed }: StatsGridProps) {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between"
+        className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between"
       >
         <div className="flex items-center justify-between mb-4">
           <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px] md:text-xs">Всего пропущено</span>
@@ -31,7 +31,7 @@ export function StatsGrid({ total, mostMissed }: StatsGridProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between"
+        className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between"
       >
         <div className="flex items-center justify-between mb-4">
           <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px] md:text-xs">Чаще всего</span>
@@ -53,7 +53,7 @@ export function StatsGrid({ total, mostMissed }: StatsGridProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between sm:col-span-2 md:col-span-1"
+        className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between sm:col-span-2 md:col-span-1"
       >
         <div className="flex items-center justify-between mb-4">
           <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px] md:text-xs">Статус</span>

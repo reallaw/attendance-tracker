@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
-import { addMonths, subMonths } from 'date-fns';
+import { addMonths, subMonths, format } from 'date-fns';
 
 import { MissedLesson } from './types';
 import { Header } from './components/dashboard/Header';
@@ -17,78 +17,34 @@ import { DistributionWidget } from './components/dashboard/DistributionWidget';
 import { TopMissed } from './components/dashboard/Sidebar/TopMissed';
 import { RecentHistory } from './components/dashboard/Sidebar/RecentHistory';
 import { SettingsModal } from './components/overlays/SettingsModal';
+import { LessonsModal } from './components/overlays/LessonsModal';
 import { LoadingOverlay } from './components/overlays/LoadingOverlay';
 import { WelcomeOverlay } from './components/overlays/WelcomeOverlay';
-
-// Актуальная версия фронтенда для API
-const APP_VERSION = "1.21";
-const API_BASE_URL = "http://localhost:8000";
-// const API_BASE_URL = "https://mesh-api.duckdns.org";
-
-// ============================================================================
-// ХАРДКОД ДАННЫХ ИЗ GOOGLE ТАБЛИЦЫ
-// ============================================================================
-
-// База предметов (Столбцы H - N)
-// [id, name, cabinet, required, before, group, maximum]
-const HARDCODED_SUBJECTS = [
-  ["33623600", "Разговоры о важном", "301", "TRUE", "TRUE", "", "1"],
-  ["33623649", "Алгебра и начала анализа", "301", "TRUE", "TRUE", "", "0.6"],
-  ["33623650", "Геометрия", "301", "TRUE", "TRUE", "", "0.6"],
-  ["33623651", "Вероятность и статистика", "301", "TRUE", "TRUE", "", "0.6"],
-  ["33623580", "Физическая культура", "сп. зал 1", "TRUE", "TRUE", "", "0.6"],
-  ["33623645", "История", "311", "TRUE", "TRUE", "", "0.6"],
-  ["33623605", "Обществознание", "309", "TRUE", "TRUE", "", "0.6"],
-  ["33623617", "Литература", "304", "TRUE", "TRUE", "", "0.6"],
-  ["33818461", "Практикум ЕГЭ по информатике", "211", "FALSE", "FALSE", "1", "0.4"],
-  ["33818462", "Практикум ЕГЭ по информатике", "211", "FALSE", "FALSE", "2", "0.4"],
-  ["23823601", "Практикум ЕГЭ по физике", "313", "FALSE", "FALSE", "3", "0.4"],
-  ["23823602", "Практикум ЕГЭ по английскому языку", "312", "FALSE", "FALSE", "4", "0.4"],
-  ["23823603", "Практикум ЕГЭ по обществознанию", "309", "FALSE", "FALSE", "5", "0.4"],
-  ["23823604", "Практикум ЕГЭ по географии", "406", "FALSE", "FALSE", "6", "0.4"],
-  ["33823605", "Практикум ЕГЭ", "301", "TRUE", "FALSE", "", "0.4"],
-  ["33818434", "Практикум ЕГЭ по математике", "113", "TRUE", "FALSE", "", "0.4"],
-  ["33802624", "Практикум ЕГЭ по русскому языку", "302", "TRUE", "FALSE", "", "0.4"]
-];
-
-// Сетка расписания (Столбцы A - E, строки 2 - 11)
-const HARDCODED_GRID = [
-  ["33623600;33818461", "33818462;23823601", "23823601;23823602", "33623645", ""],
-  ["23823601;23823602", "33623649", "33818462", "23823601;23823603", "33802624"],
-  ["33623649", "33818434", "", "33623645", "33623605"],
-  ["33623580", "33818434", "33623649", "33623649", "33623650"],
-  ["33623651", "33623617", "33623650", "33818461", "33623650"],
-  ["33818461", "33823605", "33802624", "33818461", "33818462"],
-  ["33818461", "23823602", "33802624", "33623605", "33623617"],
-  ["33818462;23823601", "", "23823603", "23823603", "33623617"],
-  ["", "", "23823603", "", ""],
-  ["", "", "", "", ""]
-];
-
-// Каникулы (A15:G16)
-const HARDCODED_HOLIDAYS = [
-  { start: new Date(2026, 1, 23), end: new Date(2026, 1, 27) }, // 23.02 - 27.02
-  { start: new Date(2026, 2, 30), end: new Date(2026, 3, 3) }   // 30.03 - 03.04
-];
-
-// Галочки настроек профильных групп (1-6)
-const HARDCODED_SETTINGS = [true, true, true, true, true, true]; 
-
-// ============================================================================
+import {
+  APP_VERSION,
+  API_BASE_URL,
+  HARDCODED_SUBJECTS,
+  HARDCODED_GRID,
+  HARDCODED_HOLIDAYS,
+  HARDCODED_SETTINGS,
+  MIN_DATE,
+  MAX_DATE
+} from './constants.ts';
 
 export default function App() {
   const [user, setUser] = useState<{ name?: string; given_name?: string } | null>(null);
   const [lessons, setLessons] = useState<MissedLesson[]>([]);
+  const [plannedLessons, setPlannedLessons] = useState<MissedLesson[]>([]);
   const [token, setToken] = useState<string>('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLessonsModalOpen, setIsLessonsModalOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(Date.now()); // Январь 2026
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [apiMessage, setApiMessage] = useState<string | null>(null);
 
-  const minDate = new Date(2026, 0, 2);  // 2 января
-  const maxDate = new Date(2026, 4, 23); // 23 мая
+  const driverRef = useRef<any>(null);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('backend_token');
@@ -160,22 +116,48 @@ export default function App() {
     try {
       localStorage.setItem('backend_token', cleanToken);
     } catch (e) {
-      console.warn("Local Storage can't be accessed!", e);
+      console.warn("Local Storage can't be accessed..", e);
     }
     
     setIsSettingsOpen(false);
     setShowWelcome(true);
-    setTimeout(() => setShowWelcome(false), 3000);
+    setTimeout(() => {
+      setShowWelcome(false);
+      if (user && user.given_name && apiMessage == null) {
+        setIsLessonsModalOpen(true);
+      }
+    }, 3000);
   };
 
   const nextMonth = () => {
     const next = addMonths(currentMonth, 1);
-    if (next <= maxDate) setCurrentMonth(next);
+    if (next <= MAX_DATE) setCurrentMonth(next);
   };
 
   const prevMonth = () => {
     const prev = subMonths(currentMonth, 1);
     setCurrentMonth(prev);
+  };
+
+  const handleTogglePlannedLesson = (date: Date, subjectId: string, subjectName: string, periodIndex: number) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const id = `planned_${dateStr}_${subjectId}_${periodIndex}`;
+    
+    setPlannedLessons(prev => {
+      const exists = prev.find(l => l.id === id);
+      if (exists) {
+        return prev.filter(l => l.id !== id);
+      }
+      return [...prev, {
+        id,
+        date: dateStr,
+        subject: subjectName,
+        subject_id: subjectId,
+        notified: false,
+        // @ts-ignore: Adding custom property for UI logic
+        isPlanned: true
+      } as MissedLesson];
+    });
   };
 
   const { stats, distributionData } = useMemo(() => {
@@ -241,13 +223,15 @@ export default function App() {
       return count || 1;
     };
 
-    const weeksTotalMain = countWorkWeeks(mainDate, maxDate);
-    const weeksTotalEarly = countWorkWeeks(earlyDate, maxDate);
+    const weeksTotalMain = countWorkWeeks(mainDate, MAX_DATE);
+    const weeksTotalEarly = countWorkWeeks(earlyDate, MAX_DATE);
     const weeksPassedMain = countWorkWeeks(mainDate, now);
     const weeksPassedEarly = countWorkWeeks(earlyDate, now);
 
+    const allLessons = [...lessons, ...plannedLessons];
+
     const missedStats: Record<string, number> = {};
-    lessons.forEach((l) => {
+    allLessons.forEach((l) => {
       const subjId = l.subject_id || mySubjects.find(s => s.name === l.subject)?.id;
       if (subjId) {
         missedStats[subjId] = (missedStats[subjId] || 0) + 1; 
@@ -312,9 +296,27 @@ export default function App() {
     });
 
     return { stats: calculatedStats, distributionData: calcDistributionData };
-  }, [lessons]);
+  }, [lessons, plannedLessons]);
 
-  const startTour = () => {
+  const selectableSubjects = HARDCODED_SUBJECTS
+  .filter(s => s[3] === "FALSE")
+  .reduce((acc, s) => {
+    const [id, name, cabinet, required, before, group] = s;
+    if (!acc[name]) {
+      acc[name] = [];
+    }
+    acc[name].push({ id, group, cabinet });
+    return acc;
+  }, {});
+
+  useEffect(() => {
+    let selected = localStorage.getItem('selected_lessons');
+    if ((!selected || JSON.parse(selected).length < Object.keys(selectableSubjects).length) && user && user.given_name) {
+      setIsSettingsOpen(true);
+    }
+  }, []);
+
+    const startTour = () => {
     const driverObj = driver({
       showProgress: true,
       animate: true,
@@ -357,19 +359,31 @@ export default function App() {
       ]
     });
 
+    driverRef.current = driverObj;
+
     driverObj.drive();
   };
 
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('has_seen_tour_v1');
-    
-    if (token && !hasSeenTour) {
+    const selected = localStorage.getItem('selected_lessons');
+    const isConditionMet = (!selected || Object.keys(selectableSubjects || {}).length > JSON.parse(selected || '[]').length);
+    console.log(isConditionMet, { selected, selectableSubjects });
+
+    if (user && user.given_name && apiMessage == null && isConditionMet) {
+        setIsLessonsModalOpen(true);
+    }
+  }, [token, user, apiMessage]);
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('has_seen_tour_v2');
+
+    if (token && !hasSeenTour && user && user.given_name && apiMessage == null && !isLessonsModalOpen) {
       setTimeout(() => {
         startTour();
-        localStorage.setItem('has_seen_tour_v1', 'true');
-      }, 500); 
+        localStorage.setItem('has_seen_tour_v2', 'true');
+      }, 500);
     }
-  }, [token]);
+  }, [isLessonsModalOpen])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100">
@@ -400,11 +414,14 @@ export default function App() {
                 currentMonth={currentMonth}
                 selectedDate={selectedDate}
                 lessons={lessons}
-                minDate={minDate}
-                maxDate={maxDate}
+                planned={plannedLessons}
+                holidays={HARDCODED_HOLIDAYS}
+                minDate={MIN_DATE}
+                maxDate={MAX_DATE}
                 onPrevMonth={prevMonth}
                 onNextMonth={nextMonth}
                 onSelectDate={setSelectedDate}
+                onTogglePlannedLesson={handleTogglePlannedLesson}
               />
             </div>
             <div id="tour-distribution">
@@ -437,6 +454,7 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)} 
         onSave={saveToken} 
       />
+      <LessonsModal isOpen={isLessonsModalOpen} data={selectableSubjects} onClose={() => setIsLessonsModalOpen(!isLessonsModalOpen)} />
       <LoadingOverlay isLoading={isLoading} />
       <WelcomeOverlay show={user ? showWelcome : false} name={user?.given_name} />
     </div>

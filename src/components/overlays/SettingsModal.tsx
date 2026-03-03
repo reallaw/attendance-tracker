@@ -25,7 +25,7 @@ export function SettingsModal({ isOpen, currentToken, onClose, onSave }: Setting
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl"
+            className="relative bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl border border-slate-100"
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">Настройки</h2>
@@ -34,7 +34,7 @@ export function SettingsModal({ isOpen, currentToken, onClose, onSave }: Setting
               </button>
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <Key size={14} />
@@ -45,7 +45,7 @@ export function SettingsModal({ isOpen, currentToken, onClose, onSave }: Setting
                   defaultValue={currentToken}
                   id="tokenInput"
                   placeholder="Введите ваш токен..."
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm"
                 />
                 <p className="mt-2 text-[10px] text-slate-400 leading-relaxed">
                   Токен необходим для авторизации ваших запросов к бэкэнду. Он хранится только в вашем браузере.
@@ -58,7 +58,7 @@ export function SettingsModal({ isOpen, currentToken, onClose, onSave }: Setting
                     const val = (document.getElementById('tokenInput') as HTMLInputElement).value;
                     onSave(val);
                   }}
-                  className="w-full bg-slate-900 text-white px-6 py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200"
+                  className="w-full bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-800 transition-all active:scale-95"
                 >
                   Сохранить изменения
                 </button>
