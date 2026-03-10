@@ -52,7 +52,8 @@ export const HARDCODED_GRID = [
 // Каникулы (A15:G16)
 export const HARDCODED_HOLIDAYS = [
   { start: new Date(2026, 1, 23), end: new Date(2026, 1, 27) }, // 23.02 - 27.02
-  { start: new Date(2026, 2, 30), end: new Date(2026, 3, 3) }   // 30.03 - 03.04
+  { start: new Date(2026, 2, 8), end: new Date(2026, 2, 8) },
+  { start: new Date(2026, 2, 30), end: new Date(2026, 3, 3) }, // 30.03 - 03.04
 ];
 
 // Галочки настроек профильных групп (1-6)

@@ -405,6 +405,20 @@ export default function App() {
           <StatsGrid total={stats.total} mostMissed={stats.mostMissed} />
         </div>
 
+        {window.innerWidth < 568 ? <div className="space-y-6 md:space-y-8 mb-8">
+            <TopMissed subjects={stats.sortedSubjects} />
+            <RecentHistory 
+              lessons={lessons} 
+              onDateClick={(dateStr) => {
+                const dateObj = new Date(dateStr);
+                setSelectedDate(dateObj);
+                setCurrentMonth(dateObj);
+                
+                document.getElementById('tour-calendar')?.scrollIntoView({ behavior: 'smooth' });
+              }} 
+            />
+          </div> : ""}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
           
           {/* Main Content Area */}
@@ -430,7 +444,7 @@ export default function App() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6 md:space-y-8">
+          {window.innerWidth >= 568 ? <div className="space-y-6 md:space-y-8">
             <TopMissed subjects={stats.sortedSubjects} />
             <RecentHistory 
               lessons={lessons} 
@@ -442,7 +456,7 @@ export default function App() {
                 document.getElementById('tour-calendar')?.scrollIntoView({ behavior: 'smooth' });
               }} 
             />
-          </div>
+          </div> : ""}
 
         </div>
       </div>
