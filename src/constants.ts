@@ -4,7 +4,7 @@
  */
 
 export const APP_VERSION = "1.30";
-export const API_BASE_URL = "http://localhost:8000";
+export const API_BASE_URL = "https://mesh-api.duckdns.org";
 
 export const MIN_DATE = new Date(2026, 0, 2);  // 2 января
 export const MAX_DATE = new Date(2026, 4, 23); // 23 мая
