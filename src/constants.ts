@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const APP_VERSION = "1.21";
-export const API_BASE_URL = "https://mesh-api.duckdns.org";
+export const APP_VERSION = "1.30";
+export const API_BASE_URL = "http://localhost:8000";
 
 export const MIN_DATE = new Date(2026, 0, 2);  // 2 января
 export const MAX_DATE = new Date(2026, 4, 23); // 23 мая
@@ -54,6 +54,12 @@ export const HARDCODED_HOLIDAYS = [
   { start: new Date(2026, 1, 23), end: new Date(2026, 1, 27) }, // 23.02 - 27.02
   { start: new Date(2026, 2, 8), end: new Date(2026, 2, 8) },
   { start: new Date(2026, 2, 30), end: new Date(2026, 3, 3) }, // 30.03 - 03.04
+];
+
+export const CHANGELOG = [
+  "Чистка расписания: теперь предметы подтягиваются динамически, а не хардкодом",
+  "Фикс багов: теперь пропуски считаются корректно, благодаря изменению логики определения расписания",
+  "8 марта оказывается праздник!! Теперь это учтено в календаре, так что пропуски в этот день не будут считаться",
 ];
 
 // Галочки настроек профильных групп (1-6)

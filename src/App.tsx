@@ -20,19 +20,20 @@ import { SettingsModal } from './components/overlays/SettingsModal';
 import { LessonsModal } from './components/overlays/LessonsModal';
 import { LoadingOverlay } from './components/overlays/LoadingOverlay';
 import { WelcomeOverlay } from './components/overlays/WelcomeOverlay';
+import { UpdateOverlay } from './components/overlays/UpdateOverlay';
 import {
+  CHANGELOG,
   APP_VERSION,
   API_BASE_URL,
   HARDCODED_SUBJECTS,
-  HARDCODED_GRID,
   HARDCODED_HOLIDAYS,
-  HARDCODED_SETTINGS,
   MIN_DATE,
   MAX_DATE
 } from './constants.ts';
 
 export default function App() {
   const [user, setUser] = useState<{ name?: string; given_name?: string } | null>(null);
+  const [mySubjects, setMySubjects] = useState<any[][]>([]);
   const [lessons, setLessons] = useState<MissedLesson[]>([]);
   const [plannedLessons, setPlannedLessons] = useState<MissedLesson[]>([]);
   const [token, setToken] = useState<string>('');
@@ -43,6 +44,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [apiMessage, setApiMessage] = useState<string | null>(null);
+  const [showUpdates, setShowUpdates] = useState(false);
 
   const driverRef = useRef<any>(null);
 
@@ -76,6 +78,12 @@ export default function App() {
           setIsLoading(false);
           return;
         }
+
+        const startStr = "2026-02-16"; 
+        const endStr = "2026-02-22";
+        const schedResp = await fetch(`${API_BASE_URL}/my/schedule?token=${token}&start=${startStr}&end=${endStr}&v=${APP_VERSION}`);
+        const dynamicList = await schedResp.json();
+        setMySubjects(dynamicList);
 
         const parsedLessons: MissedLesson[] = [];
         Object.entries(data).forEach(([dateString, subjectsDict]) => {
@@ -160,67 +168,39 @@ export default function App() {
     });
   };
 
-  const { stats, distributionData } = useMemo(() => {
+const { stats, distributionData } = useMemo(() => {
+    const source = mySubjects?.subjects_list || [];
+
     const earlyDate = new Date(2026, 0, 12);
     const mainDate = new Date(2026, 1, 2);
     
     const moscowTimeStr = new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" });
     const now = new Date(moscowTimeStr);
 
-    const mySubjects: any[] = [];
-    HARDCODED_SUBJECTS.forEach((row) => {
+    const activeSubjects: any[] = [];
+    const lessonsPerWeek: Record<string, number> = {};
+
+    source.forEach((row) => {
       const id = String(row[0]).trim();
-      const name = row[1];
+      const name = String(row[1]);
       const isRequired = String(row[3]).toUpperCase() === "TRUE";
       const useEarlyStart = String(row[4]).toUpperCase() === "TRUE";
-      const groupNum = parseInt(row[5] as string, 10);
-      const limitVal = parseFloat(row[6] as string);
+      const freq = parseInt(String(row[5]), 10) || 0;
+      const limitVal = parseFloat(String(row[6])) || 0.2;
 
-      let isAllowed = isRequired;
-      if (!isRequired) {
-        const settingIndex = groupNum - 1;
-        if (settingIndex >= 0 && settingIndex < HARDCODED_SETTINGS.length) {
-          isAllowed = HARDCODED_SETTINGS[settingIndex] === true;
-        }
-      }
-
-      if (isAllowed) {
-        mySubjects.push({ id, name, limit: limitVal || 0.2, useEarlyStart });
+      if (freq > 0 || isRequired) {
+        activeSubjects.push({ id, name, limit: limitVal, useEarlyStart, freq });
+        lessonsPerWeek[id] = freq;
       }
     });
 
-    const lessonsPerWeek: Record<string, number> = {};
-    mySubjects.forEach(s => lessonsPerWeek[s.id] = 0);
-
-    HARDCODED_GRID.forEach((row) => {
-      row.forEach(cellContent => {
-        const cellStr = String(cellContent || "");
-        if (!cellStr) return;
-        
-        const idsInCell = cellStr.split(';').map(i => i.trim());
-        for (const cellId of idsInCell) {
-          if (!cellId) continue;
-          const foundSubject = mySubjects.find(s => s.id === cellId);
-          if (foundSubject) {
-            lessonsPerWeek[foundSubject.id]++;
-            break; 
-          }
-        }
-      });
-    });
-
-    const countWorkWeeks = (start: Date, end: Date) => {
+    const countWorkWeeks = (start, end) => {
       if (start > end) return 0;
-      let count = 0;
-      let curr = new Date(start);
-      while (curr <= end) {
-        if (curr.getDay() === 1) { 
-          const isHoliday = HARDCODED_HOLIDAYS.some(h => curr >= h.start && curr <= h.end);
-          if (!isHoliday) count++;
-        }
-        curr.setDate(curr.getDate() + 7);
-      }
-      return count || 1;
+      const millisecondsPerWeek = 1000 * 60 * 60 * 24 * 7;
+      let weeks = Math.ceil((end - start) / millisecondsPerWeek);
+      
+      const holidaysCount = HARDCODED_HOLIDAYS.filter(h => h.start >= start && h.end <= end).length;
+      return Math.max(1, weeks - holidaysCount);
     };
 
     const weeksTotalMain = countWorkWeeks(mainDate, MAX_DATE);
@@ -229,19 +209,26 @@ export default function App() {
     const weeksPassedEarly = countWorkWeeks(earlyDate, now);
 
     const allLessons = [...lessons, ...plannedLessons];
-
     const missedStats: Record<string, number> = {};
+
     allLessons.forEach((l) => {
-      const subjId = l.subject_id || mySubjects.find(s => s.name === l.subject)?.id;
-      if (subjId) {
+      let subjId = l.subject_id ? String(l.subject_id) : `name_${l.subject || l.subject_name}`;
+      
+      if (!lessonsPerWeek[subjId]) {
+        const found = activeSubjects.find(s => s.name === (l.subject || l.subject_name));
+        if (found) subjId = found.id;
+      }
+
+      if (subjId && lessonsPerWeek[subjId] !== undefined) {
         missedStats[subjId] = (missedStats[subjId] || 0) + 1; 
       }
     });
 
     let totalMissedOverall = 0;
-    const subjectsStats = mySubjects.map(s => {
+
+    let subjectsStats = activeSubjects.map(s => {
       const missed = missedStats[s.id] || 0;
-      const freq = lessonsPerWeek[s.id] || 0;
+      const freq = s.freq;
       
       const currentPassedWeeks = s.useEarlyStart ? weeksPassedEarly : weeksPassedMain;
       const currentTotalWeeks = s.useEarlyStart ? weeksTotalEarly : weeksTotalMain;
@@ -249,10 +236,15 @@ export default function App() {
       let occurred = freq * currentPassedWeeks;
       let totalPlanned = freq * currentTotalWeeks;
       
-      // Исключения
-      if (["33623580", "33623617"].includes(s.id)) {
-        occurred += 3;
-        totalPlanned += 3;
+      const manualCorrectionSubjects = ["Физическая культура", "Литература"];
+
+      const needsCorrection = manualCorrectionSubjects.some(name => 
+          s.name.toLowerCase().includes(name.toLowerCase())
+      );
+
+      if (needsCorrection) {
+          occurred += 3;
+          totalPlanned += 3;
       }
 
       const factPercent = occurred > 0 ? missed / occurred : 0;
@@ -271,7 +263,7 @@ export default function App() {
 
     subjectsStats.sort((a, b) => b.factPercent - a.factPercent);
 
-    let mostMissedByQuantity = subjectsStats.sort((a, b) => b.missed - a.missed);
+    const mostMissedByQuantity = [...subjectsStats].sort((a, b) => b.missed - a.missed);
 
     const calculatedStats = {
       total: totalMissedOverall,
@@ -281,6 +273,7 @@ export default function App() {
         : { name: '—', count: 0 }
     };
 
+    // 4. Формируем данные для диаграмм/графиков
     const calcDistributionData = subjectsStats.map(subj => {
       const maxAllowed = Math.floor(subj.totalPlanned * subj.limit);
       const safeRemaining = Math.max(0, maxAllowed - subj.missed);
@@ -291,12 +284,14 @@ export default function App() {
         limit: Math.round(subj.limit * 100),
         yellow: Math.max(0, Math.round((subj.limit - 0.1) * 100)),
         red: Math.max(0, Math.round((subj.limit - 0.05) * 100)),
-        safeRemaining
+        safeRemaining,
+        maxAllowed,
+        totalPlanned: subj.totalPlanned,
       };
     });
 
     return { stats: calculatedStats, distributionData: calcDistributionData };
-  }, [lessons, plannedLessons]);
+  }, [mySubjects, lessons, plannedLessons]);
 
   const selectableSubjects = HARDCODED_SUBJECTS
   .filter(s => s[3] === "FALSE")
@@ -308,6 +303,11 @@ export default function App() {
     acc[name].push({ id, group, cabinet });
     return acc;
   }, {});
+
+  const handleCloseUpdates = () => {
+    setShowUpdates(false);
+    localStorage.setItem('last_v', APP_VERSION);
+  };
 
   useEffect(() => {
     let selected = localStorage.getItem('selected_lessons');
@@ -384,6 +384,14 @@ export default function App() {
       }, 500);
     }
   }, [isLessonsModalOpen])
+
+  useEffect(() => {
+    const lastVersion = localStorage.getItem('last_v');
+    
+    if (token && lastVersion !== APP_VERSION) {
+      setShowUpdates(true);
+    }
+  }, [token]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100">
@@ -471,6 +479,12 @@ export default function App() {
       <LessonsModal isOpen={isLessonsModalOpen} data={selectableSubjects} onClose={() => setIsLessonsModalOpen(!isLessonsModalOpen)} />
       <LoadingOverlay isLoading={isLoading} />
       <WelcomeOverlay show={user ? showWelcome : false} name={user?.given_name} />
+      <UpdateOverlay 
+        show={showUpdates} 
+        onClose={handleCloseUpdates} 
+        version={APP_VERSION} 
+        updates={CHANGELOG} 
+      />
     </div>
   );
 }
